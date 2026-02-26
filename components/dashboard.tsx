@@ -21,7 +21,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { AppSidebar } from "@/components/app-sidebar"
 import Image from "next/image"
-import { type View, type Pet, petDatabase } from "@/lib/pet-data"
+import { type View, type Pet } from "@/lib/pet-data"
+import { usePetContext } from "@/lib/pet-context"
 
 interface DashboardProps {
   onNavigate: (view: View) => void
@@ -31,12 +32,13 @@ interface DashboardProps {
 const filters = ["Todos", "Perros", "Gatos", "Sano", "Senior"]
 
 export function Dashboard({ onNavigate, onSelectPet }: DashboardProps) {
+  const { pets } = usePetContext()
   const [activeFilter, setActiveFilter] = useState("Todos")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [searchQuery, setSearchQuery] = useState("")
 
   const filteredPets = useMemo(() => {
-    let result = petDatabase
+    let result = pets
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -53,13 +55,13 @@ export function Dashboard({ onNavigate, onSelectPet }: DashboardProps) {
     else if (activeFilter === "Senior") result = result.filter((p) => parseInt(p.age) >= 7)
 
     return result
-  }, [activeFilter, searchQuery])
+  }, [activeFilter, searchQuery, pets])
 
   const stats = [
-    { value: String(petDatabase.length), label: "Mascotas Totales" },
-    { value: String(petDatabase.filter((p) => p.healthStatus === "Saludable").length), label: "Mascotas Sanas" },
-    { value: String(petDatabase.filter((p) => p.vaccines.some((v) => v.status === "Vencida")).length), label: "Proximas Vacunas" },
-    { value: String(petDatabase.filter((p) => parseInt(p.age) >= 7).length), label: "Mascotas Senior" },
+    { value: String(pets.length), label: "Mascotas Totales" },
+    { value: String(pets.filter((p) => p.healthStatus === "Saludable").length), label: "Mascotas Sanas" },
+    { value: String(pets.filter((p) => p.vaccines.some((v) => v.status === "Vencida")).length), label: "Proximas Vacunas" },
+    { value: String(pets.filter((p) => parseInt(p.age) >= 7).length), label: "Mascotas Senior" },
   ]
 
   return (

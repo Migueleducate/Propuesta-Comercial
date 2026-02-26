@@ -17,6 +17,8 @@ import {
   AlertTriangle,
   Check,
   X,
+  Mail,
+  User,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -122,6 +124,29 @@ export function StaffPetDetail({ pet, onNavigate }: StaffPetDetailProps) {
             </div>
           </div>
         )}
+
+        {/* Guest Contact Information */}
+        <section className="mb-5 rounded-lg border-2 border-blue-300 bg-blue-50">
+          <div className="border-b border-blue-200 bg-blue-100/60 px-5 py-3">
+            <h2 className="text-sm font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Informacion de Contacto del Huesped
+            </h2>
+          </div>
+          <div className="p-5 flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-200">
+              <Mail className="h-6 w-6 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-0.5">
+                Correo Electronico del Dueno
+              </p>
+              <p className="text-lg font-semibold text-blue-900">
+                {pet.ownerEmail}
+              </p>
+            </div>
+          </div>
+        </section>
 
         <div className="grid gap-5 lg:grid-cols-2">
           {/* Left Column - Identification */}

@@ -10,6 +10,7 @@ import {
   Filter,
   PawPrint,
   CalendarDays,
+  Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Image from "next/image"
-import { type View, type Pet, petDatabase } from "@/lib/pet-data"
+import { type View, type Pet } from "@/lib/pet-data"
+import { usePetContext } from "@/lib/pet-context"
 
 interface StaffSearchProps {
   onNavigate: (view: View) => void
@@ -30,17 +32,19 @@ interface StaffSearchProps {
 }
 
 export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
+  const { pets } = usePetContext()
   const [searchQuery, setSearchQuery] = useState("")
   const [speciesFilter, setSpeciesFilter] = useState("all")
   const [sexFilter, setSexFilter] = useState("all")
 
   const results = useMemo(() => {
-    let filtered = petDatabase
+    let filtered = pets
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       filtered = filtered.filter(
         (p) =>
+          p.ownerEmail.toLowerCase().includes(q) ||
           p.name.toLowerCase().includes(q) ||
           p.breed.toLowerCase().includes(q) ||
           p.species.toLowerCase().includes(q) ||
@@ -58,7 +62,7 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
     }
 
     return filtered
-  }, [searchQuery, speciesFilter, sexFilter])
+  }, [searchQuery, speciesFilter, sexFilter, pets])
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -96,7 +100,7 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, raza, especie, sexo, fecha de nacimiento o microchip..."
+              placeholder="Buscar por correo del dueno, nombre, microchip..."
               className="h-12 pl-12 text-base bg-background"
             />
           </div>
@@ -151,8 +155,9 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
         {results.length > 0 ? (
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {/* Table Header */}
-            <div className="hidden sm:grid sm:grid-cols-[3fr_1.5fr_1fr_1.5fr_2fr_1fr] gap-4 border-b border-border bg-muted/50 px-6 py-3">
+            <div className="hidden sm:grid sm:grid-cols-[2.5fr_2.5fr_1.5fr_1fr_1.5fr_2fr_1fr] gap-4 border-b border-border bg-muted/50 px-6 py-3">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mascota</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Correo del Dueno</span>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Especie / Raza</span>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sexo</span>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nacimiento</span>
@@ -165,7 +170,7 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
               <button
                 key={pet.id}
                 onClick={() => onSelectPet(pet, "staff-pet-detail")}
-                className="flex flex-col sm:grid sm:grid-cols-[3fr_1.5fr_1fr_1.5fr_2fr_1fr] gap-2 sm:gap-4 items-start sm:items-center border-b border-border px-6 py-4 hover:bg-accent/50 transition-colors w-full text-left last:border-b-0"
+                className="flex flex-col sm:grid sm:grid-cols-[2.5fr_2.5fr_1.5fr_1fr_1.5fr_2fr_1fr] gap-2 sm:gap-4 items-start sm:items-center border-b border-border px-6 py-4 hover:bg-accent/50 transition-colors w-full text-left last:border-b-0"
               >
                 {/* Pet name + image */}
                 <div className="flex items-center gap-3">
@@ -187,6 +192,12 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
                       Servicio
                     </Badge>
                   )}
+                </div>
+
+                {/* Owner Email */}
+                <div className="hidden sm:flex items-center gap-1.5 text-sm text-foreground min-w-0">
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{pet.ownerEmail}</span>
                 </div>
 
                 {/* Species + Breed */}
