@@ -22,6 +22,7 @@ export interface Pet {
   birthDate: string
   age: string
   microchip: string
+  ownerEmail: string
   location: string
   imageUrl: string
   isServiceAnimal: boolean
@@ -48,6 +49,7 @@ export const petDatabase: Pet[] = [
     birthDate: "15/03/2019",
     age: "7 anos",
     microchip: "985112003476521",
+    ownerEmail: "carlos.mendez@ejemplo.com",
     location: "Cartagena, Colombia",
     imageUrl: "/images/champeta-dog.jpg",
     isServiceAnimal: false,
@@ -77,6 +79,7 @@ export const petDatabase: Pet[] = [
     birthDate: "22/08/2023",
     age: "3 anos",
     microchip: "985112007834210",
+    ownerEmail: "maria.lopez@ejemplo.com",
     location: "Bogota, Colombia",
     imageUrl: "/images/luna-cat.jpg",
     isServiceAnimal: false,
@@ -105,6 +108,7 @@ export const petDatabase: Pet[] = [
     birthDate: "10/06/2021",
     age: "5 anos",
     microchip: "985112009156743",
+    ownerEmail: "andres.garcia@ejemplo.com",
     location: "Medellin, Colombia",
     imageUrl: "/images/max-dog.jpg",
     isServiceAnimal: true,
@@ -135,6 +139,7 @@ export const petDatabase: Pet[] = [
     birthDate: "03/11/2020",
     age: "5 anos",
     microchip: "985112004523198",
+    ownerEmail: "andres.garcia@ejemplo.com",
     location: "Barranquilla, Colombia",
     imageUrl: "/images/canela-dog.jpg",
     isServiceAnimal: false,
@@ -164,6 +169,7 @@ export const petDatabase: Pet[] = [
     birthDate: "14/02/2022",
     age: "4 anos",
     microchip: "985112006789432",
+    ownerEmail: "sofia.ramirez@ejemplo.com",
     location: "Cali, Colombia",
     imageUrl: "/images/michi-cat.jpg",
     isServiceAnimal: false,
@@ -191,6 +197,7 @@ export const petDatabase: Pet[] = [
     birthDate: "28/07/2018",
     age: "8 anos",
     microchip: "985112001234567",
+    ownerEmail: "pedro.herrera@ejemplo.com",
     location: "Santa Marta, Colombia",
     imageUrl: "/images/rocky-dog.jpg",
     isServiceAnimal: false,
@@ -220,6 +227,7 @@ export const petDatabase: Pet[] = [
     birthDate: "09/12/2017",
     age: "8 anos",
     microchip: "985112008901234",
+    ownerEmail: "carlos.mendez@ejemplo.com",
     location: "Cartagena, Colombia",
     imageUrl: "/images/nina-cat.jpg",
     isServiceAnimal: false,
