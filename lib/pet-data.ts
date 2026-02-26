@@ -36,6 +36,7 @@ export interface Pet {
   dailyAmount: string
   activityLevel: string
   coexistsWithOtherPets: boolean
+  ownerEmail: string
 }
 
 export const petDatabase: Pet[] = [
@@ -67,6 +68,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "1.5 tazas (120g)",
     activityLevel: "Medio",
     coexistsWithOtherPets: true,
+    ownerEmail: "carlos.mendez@ejemplo.com",
   },
   {
     id: "2",
@@ -95,6 +97,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "1 taza (80g) + 1 lata humeda",
     activityLevel: "Alto",
     coexistsWithOtherPets: false,
+    ownerEmail: "maria.lopez@correo.com",
   },
   {
     id: "3",
@@ -125,6 +128,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "3 tazas (350g)",
     activityLevel: "Bajo",
     coexistsWithOtherPets: true,
+    ownerEmail: "carlos.mendez@ejemplo.com",
   },
   {
     id: "4",
@@ -154,6 +158,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "2.5 tazas (300g)",
     activityLevel: "Alto",
     coexistsWithOtherPets: true,
+    ownerEmail: "andrea.ruiz@hotel.co",
   },
   {
     id: "5",
@@ -181,6 +186,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "3/4 taza (60g) + pouch",
     activityLevel: "Medio",
     coexistsWithOtherPets: false,
+    ownerEmail: "jorge.perez@mail.com",
   },
   {
     id: "6",
@@ -210,6 +216,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "3 tazas (380g)",
     activityLevel: "Bajo",
     coexistsWithOtherPets: true,
+    ownerEmail: "carlos.mendez@ejemplo.com",
   },
   {
     id: "7",
@@ -238,6 +245,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "1/2 taza (45g) + lata renal",
     activityLevel: "Bajo",
     coexistsWithOtherPets: false,
+    ownerEmail: "maria.lopez@correo.com",
   },
   {
     id: "8",
@@ -266,6 +274,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "2 tazas (200g)",
     activityLevel: "Muy Alto",
     coexistsWithOtherPets: true,
+    ownerEmail: "lucia.garcia@inbox.co",
   },
   {
     id: "9",
@@ -294,6 +303,7 @@ export const petDatabase: Pet[] = [
     dailyAmount: "3/4 taza (55g)",
     activityLevel: "Alto",
     coexistsWithOtherPets: true,
+    ownerEmail: "andrea.ruiz@hotel.co",
   },
   {
     id: "10",
@@ -324,5 +334,6 @@ export const petDatabase: Pet[] = [
     dailyAmount: "3.5 tazas (400g)",
     activityLevel: "Alto",
     coexistsWithOtherPets: true,
+    ownerEmail: "pedro.torres@gmail.com",
   },
 ]
