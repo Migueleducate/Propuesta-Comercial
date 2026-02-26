@@ -8,6 +8,7 @@ import { OwnerPetDetail } from "@/components/owner-pet-detail"
 import { StaffPetDetail } from "@/components/staff-pet-detail"
 import { StaffSearch } from "@/components/staff-search"
 import { type View, type Pet } from "@/lib/pet-data"
+import { PetProvider } from "@/lib/pet-context"
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>("landing")
@@ -28,7 +29,7 @@ export default function Home() {
   }
 
   return (
-    <>
+    <PetProvider>
       {currentView === "landing" && <LandingPage onNavigate={handleNavigate} />}
       {currentView === "dashboard" && (
         <Dashboard onNavigate={handleNavigate} onSelectPet={handleSelectPet} />
@@ -43,6 +44,6 @@ export default function Home() {
       {currentView === "staff-search" && (
         <StaffSearch onNavigate={handleNavigate} onSelectPet={handleSelectPet} />
       )}
-    </>
+    </PetProvider>
   )
 }

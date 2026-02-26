@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Image from "next/image"
-import { type View, type Pet, petDatabase } from "@/lib/pet-data"
+import { type View, type Pet } from "@/lib/pet-data"
+import { usePetContext } from "@/lib/pet-context"
 
 interface StaffSearchProps {
   onNavigate: (view: View) => void
@@ -31,12 +32,13 @@ interface StaffSearchProps {
 }
 
 export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
+  const { pets } = usePetContext()
   const [searchQuery, setSearchQuery] = useState("")
   const [speciesFilter, setSpeciesFilter] = useState("all")
   const [sexFilter, setSexFilter] = useState("all")
 
   const results = useMemo(() => {
-    let filtered = petDatabase
+    let filtered = pets
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
@@ -60,7 +62,7 @@ export function StaffSearch({ onNavigate, onSelectPet }: StaffSearchProps) {
     }
 
     return filtered
-  }, [searchQuery, speciesFilter, sexFilter])
+  }, [searchQuery, speciesFilter, sexFilter, pets])
 
   return (
     <div className="min-h-screen bg-muted/30">

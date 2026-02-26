@@ -20,6 +20,13 @@ import {
   Moon,
   LogOut,
   Crosshair,
+  Syringe,
+  Plus,
+  Trash2,
+  Pencil,
+  Check,
+  X,
+  Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,7 +41,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { AppSidebar } from "@/components/app-sidebar"
-import { type View } from "@/lib/pet-data"
+import { type View, type Vaccine } from "@/lib/pet-data"
+import { usePetContext } from "@/lib/pet-context"
 
 interface AddPetFormProps {
   onNavigate: (view: View) => void
@@ -55,11 +63,112 @@ const knownConditions = [
   "Otra",
 ]
 
+const healthStatusMap: Record<string, string> = {
+  saludable: "Saludable",
+  enfermo: "Cuidado Especial",
+  recuperacion: "Cuidado Especial",
+  critico: "Cuidado Especial",
+}
+
+const activityMap: Record<string, string> = {
+  bajo: "Bajo",
+  medio: "Medio",
+  alto: "Alto",
+  "muy-alto": "Muy Alto",
+}
+
+const speciesMap: Record<string, string> = {
+  perro: "Perro",
+  gato: "Gato",
+  ave: "Ave",
+  reptil: "Reptil",
+  otro: "Otro",
+}
+
+const sexMap: Record<string, string> = {
+  macho: "Macho",
+  hembra: "Hembra",
+}
+
+const dietMap: Record<string, string> = {
+  pienso: "Pienso / Croquetas",
+  barf: "Dieta BARF",
+  humeda: "Comida humeda",
+  mixta: "Mixta",
+  casera: "Casera",
+}
+
+function calculateAge(birthDateStr: string): string {
+  const parts = birthDateStr.split("/")
+  if (parts.length !== 3) return "0 anos"
+  const day = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const year = parseInt(parts[2], 10)
+  const birth = new Date(year, month, day)
+  const now = new Date()
+  let age = now.getFullYear() - birth.getFullYear()
+  const monthDiff = now.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+    age--
+  }
+  if (age < 1) {
+    const months = (now.getFullYear() - birth.getFullYear()) * 12 + now.getMonth() - birth.getMonth()
+    return months <= 1 ? "1 mes" : `${months} meses`
+  }
+  return age === 1 ? "1 ano" : `${age} anos`
+}
+
+interface VaccineFormEntry {
+  id: string
+  name: string
+  date: string
+  vetId: string
+  status: "Vigente" | "Vencida"
+  isEditing: boolean
+}
+
+interface FormErrors {
+  [key: string]: string
+}
+
 export function AddPetForm({ onNavigate }: AddPetFormProps) {
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([])
+  const { addPet } = usePetContext()
+
+  // Basic info
+  const [petName, setPetName] = useState("")
+  const [species, setSpecies] = useState("perro")
+  const [breed, setBreed] = useState("")
+  const [sex, setSex] = useState("macho")
+  const [birthDate, setBirthDate] = useState("")
+  const [microchip, setMicrochip] = useState("")
+  const [location, setLocation] = useState("")
+  const [ownerEmail, setOwnerEmail] = useState("")
+
+  // Service
   const [isServiceAnimal, setIsServiceAnimal] = useState(false)
+
+  // Health
   const [isSterilized, setIsSterilized] = useState(false)
+  const [healthStatus, setHealthStatus] = useState("saludable")
+  const [allergies, setAllergies] = useState("")
+  const [medications, setMedications] = useState("")
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([])
+
+  // Nutrition
+  const [foodMain, setFoodMain] = useState("")
+  const [dietType, setDietType] = useState("pienso")
+  const [dailyAmount, setDailyAmount] = useState("")
+
+  // Behavior
+  const [activityLevel, setActivityLevel] = useState("medio")
   const [livesWithOtherPets, setLivesWithOtherPets] = useState(false)
+
+  // Vaccines
+  const [vaccines, setVaccines] = useState<VaccineFormEntry[]>([])
+
+  // Validation
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const toggleCondition = (condition: string) => {
     setSelectedConditions((prev) =>
@@ -67,6 +176,103 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
         ? prev.filter((c) => c !== condition)
         : [...prev, condition]
     )
+  }
+
+  // --- Vaccine management ---
+  const addVaccine = () => {
+    setVaccines((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        date: "",
+        vetId: "",
+        status: "Vigente",
+        isEditing: true,
+      },
+    ])
+  }
+
+  const updateVaccine = (id: string, field: keyof VaccineFormEntry, value: string) => {
+    setVaccines((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, [field]: value } : v))
+    )
+  }
+
+  const deleteVaccine = (id: string) => {
+    setVaccines((prev) => prev.filter((v) => v.id !== id))
+  }
+
+  const toggleEditVaccine = (id: string) => {
+    setVaccines((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, isEditing: !v.isEditing } : v))
+    )
+  }
+
+  // --- Validation ---
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {}
+    if (!petName.trim()) newErrors.petName = "El nombre es obligatorio"
+    if (!breed.trim()) newErrors.breed = "La raza es obligatoria"
+    if (!birthDate.trim()) newErrors.birthDate = "La fecha de nacimiento es obligatoria"
+    if (!microchip.trim()) newErrors.microchip = "El microchip es obligatorio"
+    if (!location.trim()) newErrors.location = "La ubicacion es obligatoria"
+    if (!ownerEmail.trim()) newErrors.ownerEmail = "El correo del dueno es obligatorio"
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail))
+      newErrors.ownerEmail = "Ingresa un correo valido"
+
+    // Validate incomplete vaccines
+    const incompleteVaccine = vaccines.find((v) => !v.name.trim() || !v.date.trim())
+    if (incompleteVaccine) {
+      newErrors.vaccines = "Completa todos los campos de cada vacuna (nombre y fecha son requeridos)"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  // --- Submit ---
+  const handleSubmit = () => {
+    if (!validate()) return
+
+    const finalVaccines: Vaccine[] = vaccines.map((v) => ({
+      name: v.name,
+      date: v.date,
+      vetId: v.vetId || "N/A",
+      status: v.status,
+    }))
+
+    const newPet = {
+      id: crypto.randomUUID(),
+      name: petName.trim(),
+      species: speciesMap[species] || species,
+      breed: breed.trim(),
+      sex: sexMap[sex] || sex,
+      birthDate: birthDate.trim(),
+      age: calculateAge(birthDate.trim()),
+      microchip: microchip.trim(),
+      location: location.trim(),
+      imageUrl: species === "gato" ? "/images/luna-cat.jpg" : "/images/champeta-dog.jpg",
+      isServiceAnimal,
+      isSterilized,
+      healthStatus: healthStatusMap[healthStatus] || "Saludable",
+      allergies: allergies.trim() || "Ninguna conocida",
+      medications: medications.trim() || "Ninguno",
+      diseases: selectedConditions,
+      vaccines: finalVaccines,
+      foodMain: foodMain.trim() || "Sin especificar",
+      dietType: dietMap[dietType] || dietType,
+      dailyAmount: dailyAmount.trim() || "Sin especificar",
+      activityLevel: activityMap[activityLevel] || activityLevel,
+      coexistsWithOtherPets: livesWithOtherPets,
+      ownerEmail: ownerEmail.trim(),
+    }
+
+    addPet(newPet)
+    setShowSuccess(true)
+    setTimeout(() => {
+      onNavigate("dashboard")
+    }, 1500)
   }
 
   return (
@@ -118,7 +324,51 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
             <h1 className="text-2xl font-bold text-foreground">Agregar Nueva Mascota</h1>
           </div>
 
+          {/* Success Toast */}
+          {showSuccess && (
+            <div className="mx-auto mb-6 max-w-3xl">
+              <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 px-5 py-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">Mascota creada exitosamente</p>
+                  <p className="text-xs text-green-600">Redirigiendo al dashboard...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mx-auto max-w-3xl space-y-6">
+            {/* Owner Email - Prominent */}
+            <section className="rounded-xl border-2 border-blue-200 bg-card p-6">
+              <div className="mb-4 flex items-center gap-2 text-foreground">
+                <Mail className="h-5 w-5 text-blue-500" />
+                <h2 className="text-lg font-semibold">Contacto del Huesped</h2>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-blue-700">
+                  Correo electronico del dueno *
+                </Label>
+                <Input
+                  value={ownerEmail}
+                  onChange={(e) => {
+                    setOwnerEmail(e.target.value)
+                    if (errors.ownerEmail) setErrors((prev) => ({ ...prev, ownerEmail: "" }))
+                  }}
+                  placeholder="Ej: carlos.mendez@ejemplo.com"
+                  className={`mt-1.5 ${errors.ownerEmail ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                  type="email"
+                />
+                {errors.ownerEmail && (
+                  <p className="mt-1 text-xs text-red-500">{errors.ownerEmail}</p>
+                )}
+                <p className="mt-1.5 text-xs text-blue-600">
+                  Este correo es el identificador unico del huesped en el sistema.
+                </p>
+              </div>
+            </section>
+
             {/* Basic Information */}
             <section className="rounded-xl border border-border bg-card p-6">
               <div className="mb-6 flex items-center gap-2 text-foreground">
@@ -141,19 +391,30 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
               <div className="mb-4 grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-sm font-medium text-hotel-accent">
-                    Nombre de la mascota
+                    Nombre de la mascota *
                   </Label>
                   <div className="mt-1.5 flex gap-2">
-                    <Input placeholder="Ej: Max, Luna, Simba" />
+                    <Input
+                      value={petName}
+                      onChange={(e) => {
+                        setPetName(e.target.value)
+                        if (errors.petName) setErrors((prev) => ({ ...prev, petName: "" }))
+                      }}
+                      placeholder="Ej: Max, Luna, Simba"
+                      className={errors.petName ? "border-red-400 focus-visible:ring-red-400" : ""}
+                    />
                     <Button variant="outline" size="sm" className="shrink-0 gap-1.5 text-xs">
                       <Sparkles className="h-3.5 w-3.5" />
                       Corregir con IA
                     </Button>
                   </div>
+                  {errors.petName && (
+                    <p className="mt-1 text-xs text-red-500">{errors.petName}</p>
+                  )}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Especie</Label>
-                  <Select defaultValue="perro">
+                  <Label className="text-sm font-medium">Especie *</Label>
+                  <Select value={species} onValueChange={setSpecies}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Seleccionar especie" />
                     </SelectTrigger>
@@ -169,20 +430,32 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
               </div>
 
               {/* Breed + Sex */}
-              <div className="mb-1 grid gap-4 sm:grid-cols-2">
+              <div className="mb-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-sm font-medium">Raza</Label>
+                  <Label className="text-sm font-medium">Raza *</Label>
                   <div className="relative mt-1.5">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="Buscar raza de perro..." className="pl-10" />
+                    <Input
+                      value={breed}
+                      onChange={(e) => {
+                        setBreed(e.target.value)
+                        if (errors.breed) setErrors((prev) => ({ ...prev, breed: "" }))
+                      }}
+                      placeholder="Buscar raza..."
+                      className={`pl-10 ${errors.breed ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                    />
                   </div>
-                  <p className="mt-1.5 text-xs text-blue-600">
-                    Se valida y sugiere razas oficiales para evitar errores.
-                  </p>
+                  {errors.breed ? (
+                    <p className="mt-1 text-xs text-red-500">{errors.breed}</p>
+                  ) : (
+                    <p className="mt-1.5 text-xs text-blue-600">
+                      Se valida y sugiere razas oficiales para evitar errores.
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Sexo</Label>
-                  <Select defaultValue="macho">
+                  <Label className="text-sm font-medium">Sexo *</Label>
+                  <Select value={sex} onValueChange={setSex}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Seleccionar sexo" />
                     </SelectTrigger>
@@ -194,14 +467,25 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 </div>
               </div>
 
-              {/* Birth + Death date */}
+              {/* Birth date */}
               <div className="mb-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-sm font-medium">Fecha de Nacimiento</Label>
+                  <Label className="text-sm font-medium">Fecha de Nacimiento *</Label>
                   <div className="relative mt-1.5">
-                    <Input placeholder="DD/MM/AAAA" />
+                    <Input
+                      value={birthDate}
+                      onChange={(e) => {
+                        setBirthDate(e.target.value)
+                        if (errors.birthDate) setErrors((prev) => ({ ...prev, birthDate: "" }))
+                      }}
+                      placeholder="DD/MM/AAAA"
+                      className={errors.birthDate ? "border-red-400 focus-visible:ring-red-400" : ""}
+                    />
                     <CalendarDays className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   </div>
+                  {errors.birthDate && (
+                    <p className="mt-1 text-xs text-red-500">{errors.birthDate}</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Fecha de fallecimiento (opcional)</Label>
@@ -215,20 +499,40 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
               {/* Microchip */}
               <div className="mb-4">
                 <Label className="text-sm font-medium text-hotel-accent">
-                  Numero de microchip
+                  Numero de microchip *
                 </Label>
-                <Input className="mt-1.5 max-w-sm" placeholder="Ej: 985112003476521" />
-                <p className="mt-1.5 text-xs text-hotel-accent">
-                  Recomendacion: implantar microchip facilita la identificacion en caso de perdida y es requisito en muchos municipios.
-                </p>
+                <Input
+                  value={microchip}
+                  onChange={(e) => {
+                    setMicrochip(e.target.value)
+                    if (errors.microchip) setErrors((prev) => ({ ...prev, microchip: "" }))
+                  }}
+                  className={`mt-1.5 max-w-sm ${errors.microchip ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                  placeholder="Ej: 985112003476521"
+                />
+                {errors.microchip ? (
+                  <p className="mt-1 text-xs text-red-500">{errors.microchip}</p>
+                ) : (
+                  <p className="mt-1.5 text-xs text-hotel-accent">
+                    Recomendacion: implantar microchip facilita la identificacion en caso de perdida y es requisito en muchos municipios.
+                  </p>
+                )}
               </div>
 
               {/* Location */}
               <div>
-                <Label className="text-sm font-medium">Ubicacion (ciudad y pais)</Label>
+                <Label className="text-sm font-medium">Ubicacion (ciudad y pais) *</Label>
                 <div className="relative mt-1.5">
                   <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input placeholder="Ej: Bogota, Colombia" className="pl-10 pr-20" />
+                  <Input
+                    value={location}
+                    onChange={(e) => {
+                      setLocation(e.target.value)
+                      if (errors.location) setErrors((prev) => ({ ...prev, location: "" }))
+                    }}
+                    placeholder="Ej: Bogota, Colombia"
+                    className={`pl-10 pr-20 ${errors.location ? "border-red-400 focus-visible:ring-red-400" : ""}`}
+                  />
                   <div className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7">
                       <Crosshair className="h-4 w-4" />
@@ -238,6 +542,9 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                     </Button>
                   </div>
                 </div>
+                {errors.location && (
+                  <p className="mt-1 text-xs text-red-500">{errors.location}</p>
+                )}
               </div>
             </section>
 
@@ -265,7 +572,6 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 <h2 className="text-lg font-semibold">Salud y Bienestar</h2>
               </div>
 
-              {/* Sterilized + General health */}
               <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="flex items-center gap-3">
                   <Switch
@@ -278,7 +584,7 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 </div>
                 <div className="sm:w-48">
                   <Label className="text-sm font-medium">Estado de Salud General</Label>
-                  <Select defaultValue="saludable">
+                  <Select value={healthStatus} onValueChange={setHealthStatus}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue />
                     </SelectTrigger>
@@ -292,12 +598,16 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 </div>
               </div>
 
-              {/* Allergies + Medications */}
               <div className="mb-4 grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="text-sm font-medium">Alergias (no alimentarias)</Label>
                   <div className="mt-1.5 flex gap-2">
-                    <Input placeholder="Ej: polen, acaros, medicamento..." className="flex-1" />
+                    <Input
+                      value={allergies}
+                      onChange={(e) => setAllergies(e.target.value)}
+                      placeholder="Ej: polen, acaros, medicamento..."
+                      className="flex-1"
+                    />
                     <Button variant="outline" size="sm" className="shrink-0 gap-1.5 text-xs">
                       <Sparkles className="h-3.5 w-3.5" />
                       Corregir con IA
@@ -307,7 +617,12 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 <div>
                   <Label className="text-sm font-medium">Medicamentos Actuales</Label>
                   <div className="mt-1.5 flex gap-2">
-                    <Input placeholder="Ej: Meloxicam 5mg cada 12h..." className="flex-1" />
+                    <Input
+                      value={medications}
+                      onChange={(e) => setMedications(e.target.value)}
+                      placeholder="Ej: Meloxicam 5mg cada 12h..."
+                      className="flex-1"
+                    />
                     <Button variant="outline" size="sm" className="shrink-0 gap-1.5 text-xs">
                       <Sparkles className="h-3.5 w-3.5" />
                       Corregir con IA
@@ -316,7 +631,6 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 </div>
               </div>
 
-              {/* Known conditions */}
               <div>
                 <Label className="text-sm font-medium">Enfermedades conocidas</Label>
                 <div className="mt-1.5 flex gap-2">
@@ -351,6 +665,160 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
               </div>
             </section>
 
+            {/* Vaccines */}
+            <section className="rounded-xl border border-border bg-card p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-foreground">
+                  <Syringe className="h-5 w-5 text-teal-600" />
+                  <h2 className="text-lg font-semibold">Vacunas</h2>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={addVaccine}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Agregar vacuna
+                </Button>
+              </div>
+
+              {errors.vaccines && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5">
+                  <p className="text-xs text-red-600">{errors.vaccines}</p>
+                </div>
+              )}
+
+              {vaccines.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-10 text-center">
+                  <Syringe className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">No hay vacunas registradas</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Haz clic en "Agregar vacuna" para empezar.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {vaccines.map((vaccine, idx) => (
+                    <div
+                      key={vaccine.id}
+                      className={`rounded-lg border p-4 transition-colors ${
+                        vaccine.isEditing
+                          ? "border-teal-200 bg-teal-50/50"
+                          : "border-border bg-background"
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Vacuna #{idx + 1}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {!vaccine.isEditing && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                              onClick={() => toggleEditVaccine(vaccine.id)}
+                              aria-label="Editar vacuna"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {vaccine.isEditing && vaccine.name.trim() && vaccine.date.trim() && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-green-600 hover:text-green-700"
+                              onClick={() => toggleEditVaccine(vaccine.id)}
+                              aria-label="Confirmar vacuna"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-400 hover:text-red-600"
+                            onClick={() => deleteVaccine(vaccine.id)}
+                            aria-label="Eliminar vacuna"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {vaccine.isEditing ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <Label className="text-xs font-medium">Nombre de la vacuna *</Label>
+                            <Input
+                              value={vaccine.name}
+                              onChange={(e) => updateVaccine(vaccine.id, "name", e.target.value)}
+                              placeholder="Ej: Rabia, Parvovirus..."
+                              className="mt-1 h-9 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium">Fecha de aplicacion *</Label>
+                            <Input
+                              value={vaccine.date}
+                              onChange={(e) => updateVaccine(vaccine.id, "date", e.target.value)}
+                              placeholder="DD/MM/AAAA"
+                              className="mt-1 h-9 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium">ID Veterinario</Label>
+                            <Input
+                              value={vaccine.vetId}
+                              onChange={(e) => updateVaccine(vaccine.id, "vetId", e.target.value)}
+                              placeholder="Ej: VET-84729"
+                              className="mt-1 h-9 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs font-medium">Estado</Label>
+                            <Select
+                              value={vaccine.status}
+                              onValueChange={(val) =>
+                                updateVaccine(vaccine.id, "status", val)
+                              }
+                            >
+                              <SelectTrigger className="mt-1 h-9 text-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Vigente">Vigente</SelectItem>
+                                <SelectItem value="Vencida">Vencida</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+                          <span className="text-sm font-medium text-foreground">{vaccine.name}</span>
+                          <span className="text-sm text-muted-foreground">{vaccine.date}</span>
+                          {vaccine.vetId && (
+                            <span className="text-xs text-muted-foreground font-mono">{vaccine.vetId}</span>
+                          )}
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${
+                              vaccine.status === "Vigente"
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : "border-amber-200 bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {vaccine.status}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
             {/* Nutrition */}
             <section className="rounded-xl border border-border bg-card p-6">
               <div className="mb-6 flex items-center gap-2 text-foreground">
@@ -363,12 +831,17 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                   <Label className="text-sm font-medium">Alimento Principal</Label>
                   <div className="relative mt-1.5">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input placeholder="Buscar alimento..." className="pl-10" />
+                    <Input
+                      value={foodMain}
+                      onChange={(e) => setFoodMain(e.target.value)}
+                      placeholder="Buscar alimento..."
+                      className="pl-10"
+                    />
                   </div>
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Tipo de Dieta</Label>
-                  <Select defaultValue="pienso">
+                  <Select value={dietType} onValueChange={setDietType}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue />
                     </SelectTrigger>
@@ -385,7 +858,12 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
 
               <div className="mt-4">
                 <Label className="text-sm font-medium">Cantidad Diaria de Alimento</Label>
-                <Input className="mt-1.5 max-w-sm" placeholder="Ej: 2 tazas, 200g" />
+                <Input
+                  value={dailyAmount}
+                  onChange={(e) => setDailyAmount(e.target.value)}
+                  className="mt-1.5 max-w-sm"
+                  placeholder="Ej: 2 tazas, 200g"
+                />
               </div>
             </section>
 
@@ -399,7 +877,7 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div className="sm:w-64">
                   <Label className="text-sm font-medium">Nivel de Actividad</Label>
-                  <Select defaultValue="medio">
+                  <Select value={activityLevel} onValueChange={setActivityLevel}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue />
                     </SelectTrigger>
@@ -432,7 +910,8 @@ export function AddPetForm({ onNavigate }: AddPetFormProps) {
                 Cancelar
               </button>
               <Button
-                onClick={() => onNavigate("dashboard")}
+                onClick={handleSubmit}
+                disabled={showSuccess}
                 className="bg-foreground text-background hover:bg-foreground/90 px-6"
               >
                 Crear Mascota
